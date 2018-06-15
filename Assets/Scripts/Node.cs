@@ -1,17 +1,16 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 public class Node
 {
     public Vector3 location;
-
     public List<Node> neighbors = new List<Node>();
     public GameObject nodeGameObject;
     public bool isOriginDestination;
     public int OriginDestinationNumber;
     public GameObject intersectionPrefab;
     public GameObject originDestinationPrefab;
+    public NodeState nodeState;
 
     public enum NodeState
     {
@@ -19,8 +18,6 @@ public class Node
         OriginDestination,
         ToBeDestroyed
     }
-
-    public NodeState nodeState;
 
     // If a node is clicked on, it should move to the next state.
     public NodeState GetNextNodeState()
@@ -37,7 +34,7 @@ public class Node
         }
     }
 
-    public Node (Vector3 location, GameObject nodeGameObject)
+    public Node(Vector3 location, GameObject nodeGameObject)
     {
         this.location = location;
         this.nodeGameObject = nodeGameObject;
@@ -47,8 +44,6 @@ public class Node
 
     public void SelectNextNodeState()
     {
-        //Destroy(nodeGameObject);
-
         nodeState = GetNextNodeState();
         if (nodeState == NodeState.OriginDestination)
         {
@@ -71,5 +66,4 @@ public class Node
         neighbors.Remove(neighbor);
         Debug.Log("Removing neighbor at " + neighbor.location + " from " + location);
     }
-
 }

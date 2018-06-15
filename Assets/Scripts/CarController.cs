@@ -1,16 +1,15 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
-public class CarController : MonoBehaviour {
+public class CarController : MonoBehaviour
+{
 
     public float speed;
+
+    private NodeController nodeController;
     private Node origin;
     private Node destination;
-
-    private bool driving;
     private GameObject car;
-    private NodeController nodeController;
+    private bool driving;
 
     public void SetOrigin(Node origin)
     {
@@ -22,12 +21,13 @@ public class CarController : MonoBehaviour {
         this.destination = destination;
     }
 
-	// Use this for initialization
-	void Start () {
+    // Use this for initialization
+    void Start()
+    {
         nodeController = FindObjectOfType<NodeController>();
         MoveToOriginAndPointAtDestination();
         StartDriving();
-	}
+    }
 
     private void MoveToOriginAndPointAtDestination()
     {
@@ -40,30 +40,31 @@ public class CarController : MonoBehaviour {
     private void StartDriving()
     {
         driving = true;
-
     }
 
     private void StopDriving()
     {
         driving = false;
     }
-	
-	// Update is called once per frame
-	void Update () {
-		if (driving)
+
+    // Update is called once per frame
+    void Update()
+    {
+        if (driving)
         {
             transform.position += transform.forward * Time.deltaTime * speed;
             if (ArrivedAtDestination())
             {
-                Debug.Log("Arrived");
                 SetNewDestination();
             }
         }
-	}
+    }
 
     private bool ArrivedAtDestination()
     {
-        if (Vector3.Distance(transform.position, destination.location) <= speed * Time.deltaTime * 4) {
+        // TODO: Come up with a less hacky / more reliable way to do this
+        if (Vector3.Distance(transform.position, destination.location) <= speed * Time.deltaTime * 4)
+        {
             return true;
         }
 
@@ -76,6 +77,4 @@ public class CarController : MonoBehaviour {
         destination = nodeController.GetRandomNeighbor(destination);
         MoveToOriginAndPointAtDestination();
     }
-
-
 }
