@@ -1,36 +1,26 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 // Tells us where on the grid we've clicked
-public class MouseController : MonoBehaviour {
-
-    
+public class MouseController : MonoBehaviour
+{
     public GameObject roadPrefab;
-
-    
 
     private GridLineCreator grid;
     private NodeController nodeController;
     private Camera mainCamera;
-
-
     private Vector3 lastGridPosition;
 
-
-	void Start () {
+    void Start()
+    {
         mainCamera = Camera.main;
         nodeController = FindObjectOfType<NodeController>();
         grid = FindObjectOfType<GridLineCreator>();
     }
-	
-	void Update () {
 
+    void Update()
+    {
         // Shoot a ray from the camera to the mouse so we can see what it hits
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
-
-
-
         RaycastHit hitInfo;
 
         // The only thing with a collider is the ground, so we don't need
@@ -65,7 +55,7 @@ public class MouseController : MonoBehaviour {
 
             }
         }
-	}
+    }
 
     private Vector3 getClosestGridpoint(Vector3 position)
     {
@@ -74,7 +64,7 @@ public class MouseController : MonoBehaviour {
         float closestGridX = grid.GetLeftEdgeX() +
             Mathf.Round(gridUnitsFromLeftEdgeOfGround) * grid.GetGridSizeX();
 
-        float distanceFromTopEdgeOfGround = grid.GetTopEdgeZ() - position.z; 
+        float distanceFromTopEdgeOfGround = grid.GetTopEdgeZ() - position.z;
         float gridUnitsFromTopEdgeOfGround = distanceFromTopEdgeOfGround / grid.GetGridSizeZ();
         float closestGridZ = grid.GetTopEdgeZ() -
             Mathf.Round(gridUnitsFromTopEdgeOfGround) * grid.GetGridSizeZ();

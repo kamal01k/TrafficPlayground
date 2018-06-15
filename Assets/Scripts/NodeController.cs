@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -9,11 +7,12 @@ using UnityEngine;
 // - Finishing a road
 // - Cancelling a road that's be drawn
 // - Toggling between intersections and origin/destinations
-public class NodeController : MonoBehaviour {
-
+public class NodeController : MonoBehaviour
+{
     public GameObject nodePrefab;
     public GameObject intersectionPrefab;
     public GameObject roadPrefab;
+    public GameObject carPrefab;
     public GameObject selectionIndicator;
     public GameObject originDestinationPrefab;
 
@@ -22,8 +21,6 @@ public class NodeController : MonoBehaviour {
     private bool drawingFromExistingNode;
     private Node roadStart;
     private GameObject newRoad;
-    public GameObject carPrefab;
-
     private GameObject carsParent;
     private bool leftMouseButtonPressed;
     private Vector3 positionWhereLeftMouseButtonPressed;
@@ -61,11 +58,6 @@ public class NodeController : MonoBehaviour {
         {
             DrawRoad(positionWhereLeftMouseButtonPressed, currentPosition);
         }
-
-        if (drawingRoad)
-        {
-
-        }
     }
 
     private void DrawRoad(Vector3 start, Vector3 end)
@@ -92,44 +84,9 @@ public class NodeController : MonoBehaviour {
 
     public void LeftMousePressAtGridPoint(Vector3 position)
     {
-
         nodeWhereLeftMouseButtonPressed = AddOrLocateNode(position, out nodeExistsWhereLeftMouseButtonPressed);
         leftMouseButtonPressed = true;
         positionWhereLeftMouseButtonPressed = position;
-
-        //Node currentNode = AddOrLocateNode(position, out drawingFromExistingNode);
-
-        //// Add an origin/destination if left control is held down
-        //if (Input.GetKey(KeyCode.LeftControl))
-        //{
-        //    if (!currentNode.isOriginDestination)
-        //    {
-                
-        //    }
-        //    Instantiate(originDestinationPrefab, position, Quaternion.identity);
-
-        //}
-
-        //if (drawingRoad)
-        //{
-        //    // Only add a new node and complete the road if the user clicks somewhere other
-        //    // than where they started.
-        //    if (position != roadStart.location)
-        //    {
-        //        GameObject placedRoad = Instantiate(roadPrefab, newRoad.transform.position, newRoad.transform.localRotation);
-        //        placedRoad.transform.localScale = newRoad.transform.localScale;
-        //        currentNode.AddNeighbor(roadStart);
-        //        roadStart.AddNeighbor(currentNode);
-        //    }
-
-        //    Destroy(newRoad);
-        //    drawingRoad = false;
-        //}
-        //else
-        //{
-        //    roadStart = currentNode;
-        //    drawingRoad = true;
-        //}
     }
 
     public void LeftMouseReleasedAtGridPoint(Vector3 currentPosition)
@@ -152,7 +109,8 @@ public class NodeController : MonoBehaviour {
         // and a node was already there, cycle the node to the next type
         // (intersection > origin/destination, origin/destination > intersection)
         if ((currentPosition == positionWhereLeftMouseButtonPressed)
-                && nodeExistsWhereLeftMouseButtonPressed) {
+                && nodeExistsWhereLeftMouseButtonPressed)
+        {
             Node node = nodeWhereLeftMouseButtonPressed;
             Node.NodeState nodeState = node.GetNextNodeState();
             GameObject gameObjectToInstantiate;

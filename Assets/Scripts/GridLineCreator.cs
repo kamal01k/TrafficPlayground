@@ -1,14 +1,12 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
-public class GridLineCreator : MonoBehaviour {
+public class GridLineCreator : MonoBehaviour
+{
 
     // How many grid lines (edges of ground not included) do we want?
     public int GridCount;
     public GameObject ground;
     public GameObject gridLinePrefab;
-
 
     private float LeftEdgeX;
     private float TopEdgeZ;
@@ -35,8 +33,9 @@ public class GridLineCreator : MonoBehaviour {
         return GridSizeZ;
     }
 
-	// Use this for initialization
-	void Start () {
+    // Use this for initialization
+    void Start()
+    {
 
         // Find out how big the ground is.
         Mesh mesh = ground.gameObject.GetComponent<MeshFilter>().mesh;
