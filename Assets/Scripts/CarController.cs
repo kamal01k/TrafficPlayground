@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 public class CarController : MonoBehaviour
 {
@@ -10,6 +11,8 @@ public class CarController : MonoBehaviour
     private Node destination;
     private GameObject car;
     private bool driving;
+    private Route currentRoute;
+    private int currentLeg;
 
     public void SetOrigin(Node origin)
     {
@@ -19,6 +22,14 @@ public class CarController : MonoBehaviour
     public void SetDestination(Node destination)
     {
         this.destination = destination;
+    }
+
+    public void SetRoute(Route route)
+    {
+        currentRoute = route;
+        currentLeg = 1;
+        SetOrigin(route.path[0]);
+        SetDestination(route.path[currentLeg]);
     }
 
     // Use this for initialization
@@ -73,8 +84,24 @@ public class CarController : MonoBehaviour
 
     private void SetNewDestination()
     {
-        origin = destination;
-        destination = nodeController.GetRandomNeighbor(destination);
+        // If we're at the end of our route, find a random route to another
+        // destination
+        if (destination == currentRoute.path[currentRoute.path.Count - 1])
+        {
+            Node newDestination = nodeController.GetOriginDestinationOtherThan(destination);
+            List<Route> newRoutes = nodeController.GetRoutes(destination, newDestination);
+            int indexOfRouteToUse = Random.Range(0, newRoutes.Count);
+            SetRoute(newRoutes[indexOfRouteToUse]);
+        }
+
+        // Otherwise, move to the next leg
+        else
+        {
+            origin = destination;
+            currentLeg++;
+            destination = currentRoute.path[currentLeg];
+        }
+
         MoveToOriginAndPointAtDestination();
     }
 }

@@ -42,6 +42,11 @@ public class Node
         Debug.Log("Adding node at " + location);
     }
 
+    public override string ToString()
+    {
+        return location.x + ", " + location.z;
+    }
+
     public void SelectNextNodeState()
     {
         nodeState = GetNextNodeState();

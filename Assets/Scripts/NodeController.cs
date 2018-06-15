@@ -40,10 +40,38 @@ public class NodeController : MonoBehaviour
             GameObject newCar = Instantiate(carPrefab, carsParent.transform);
             CarController carController = newCar.GetComponent<CarController>();
 
-            Node origin = GetRandomNode();
-            Node destination = GetRandomNeighbor(origin);
-            carController.SetOrigin(origin);
-            carController.SetDestination(destination);
+            Node origin = GetRandomOriginDestination();
+            Node destination = GetOriginDestinationOtherThan(origin);
+            List<Route> routes = GetRoutes(origin, destination);
+            PrintRoutes(routes);
+            if (routes.Count < 1)
+            {
+                Debug.Log("No routes to set for car.");
+                return;
+            }
+            int indexOfRouteToUse = Random.Range(0, routes.Count);
+            carController.SetRoute(routes[indexOfRouteToUse]);
+        }
+    }
+
+    private void PrintRoutes(List<Route> routes)
+    {
+        if (routes.Count == 0)
+        {
+            Debug.Log("No routes found.");
+            return;
+        }
+
+        int routeNumber = 1;
+        foreach (Route route in routes)
+        {
+            string routeString = "Route " + routeNumber + ":";
+            foreach (Node node in route.path)
+            {
+                routeString += " " + node + ";";
+            }
+            Debug.Log(routeString);
+            routeNumber++;
         }
     }
 
@@ -206,6 +234,91 @@ public class NodeController : MonoBehaviour
 
         int i = UnityEngine.Random.Range(0, nodes.Count);
         return nodes[i];
+    }
+
+    // Return a node which is marked as being an origin/destination
+    public Node GetRandomOriginDestination()
+    {
+        var originDestinationNodes = from node in nodes
+                                     where node.nodeState == Node.NodeState.OriginDestination
+                                     select node;
+
+        int originDestinationCount = originDestinationNodes.Count<Node>();
+        if (originDestinationCount == 0)
+        {
+            return null;
+        }
+
+        return originDestinationNodes.ToList<Node>()[UnityEngine.Random.Range(0, originDestinationCount)];
+    }
+
+    // Return an origin/destination node other than the one we've specified
+    public Node GetOriginDestinationOtherThan(Node specified)
+    {
+        var originDestinationNodes = from node in nodes
+                                     where ((node.nodeState == Node.NodeState.OriginDestination) && node != specified)
+                                     select node;
+
+        int otherOriginDestinationCount = originDestinationNodes.Count<Node>();
+        if (otherOriginDestinationCount == 0)
+        {
+            return null;
+        }
+
+        return originDestinationNodes.ToList<Node>()[Random.Range(0, otherOriginDestinationCount)];
+    }
+
+    // Get a list of all routs from start to end
+    public List<Route> GetRoutes(Node start, Node end, Node cameFrom = null, List<Node> visitedNodes = null)
+    {
+        List<Route> routes = new List<Route>();
+
+        if (visitedNodes == null)
+        {
+            visitedNodes = new List<Node>();
+        }
+
+        visitedNodes.Add(start);
+
+        // Get all the neighbors that start connects to
+        foreach (Node neighbor in start.neighbors)
+        {
+            // We want to ignore nodes that we've already visited.
+            if (visitedNodes.Contains(neighbor))
+            {
+                continue;
+            }
+
+            // If we find the neighbor that is the destination,
+            // return a list containing just that neighbor.
+            if (neighbor == end)
+            {
+                Route route = new Route();
+                route.Add(end);
+                routes.Add(route);
+                continue;
+            }
+
+            // Otherwise, keep looking
+            List<Route> deeperRoutes = GetRoutes(neighbor, end, start, visitedNodes);
+            if (deeperRoutes != null)
+            {
+                routes.AddRange(deeperRoutes);
+            }
+        }
+
+        // If any routes were found, now we need to add ourselves to the front
+        // of each before we return them.
+        foreach (Route route in routes)
+        {
+            route.AddToFrontOfList(start);
+        }
+
+        // We also need to remove this node from the list of visited nodes,
+        // as there may be another path to this node that we haven't yet found
+        visitedNodes.Remove(start);
+
+        return routes;
     }
 
     public Node GetRandomNeighbor(Node node)
