@@ -34,12 +34,18 @@ public class Node
         }
     }
 
-    public Node(Vector3 location, GameObject nodeGameObject)
+    public Node(Vector3 location, GameObject intersectionPrefab, GameObject originDestinationPrefab)
     {
         this.location = location;
-        this.nodeGameObject = nodeGameObject;
+
+        // Nodes always start as intersections.  Unfortunately I don't yet know how
+        // to get a reference to a prefab from a class that doesn't
+        // inherit MonoBehaviour, so we have to use this references that were passed
+        // in from NodeController.
+        this.intersectionPrefab = intersectionPrefab;
+        this.originDestinationPrefab = originDestinationPrefab;
+        this.nodeGameObject = GameObject.Instantiate(intersectionPrefab, location, Quaternion.identity);
         this.nodeState = NodeState.Intersection;
-        Debug.Log("Adding node at " + location);
     }
 
     public override string ToString()
@@ -50,14 +56,19 @@ public class Node
     public void SelectNextNodeState()
     {
         nodeState = GetNextNodeState();
+
+        GameObject prefabToInstantiate;
         if (nodeState == NodeState.OriginDestination)
         {
-            nodeGameObject = originDestinationPrefab;
+            prefabToInstantiate = originDestinationPrefab;
         }
         else
         {
-            nodeGameObject = intersectionPrefab;
+            prefabToInstantiate = intersectionPrefab;
         }
+
+        GameObject.Destroy(nodeGameObject);
+        nodeGameObject = GameObject.Instantiate(originDestinationPrefab, location, Quaternion.identity);
     }
 
     public void AddNeighbor(Node neighbor)

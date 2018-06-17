@@ -139,21 +139,7 @@ public class NodeController : MonoBehaviour
         if ((currentPosition == positionWhereLeftMouseButtonPressed)
                 && nodeExistsWhereLeftMouseButtonPressed)
         {
-            Node node = nodeWhereLeftMouseButtonPressed;
-            Node.NodeState nodeState = node.GetNextNodeState();
-            GameObject gameObjectToInstantiate;
-            if (nodeState == Node.NodeState.Intersection)
-            {
-                gameObjectToInstantiate = intersectionPrefab;
-                node.nodeState = Node.NodeState.Intersection;
-            }
-            else
-            {
-                gameObjectToInstantiate = originDestinationPrefab;
-                node.nodeState = Node.NodeState.OriginDestination;
-            }
-            Destroy(node.nodeGameObject);
-            node.nodeGameObject = Instantiate(gameObjectToInstantiate, node.location, Quaternion.identity);
+            nodeWhereLeftMouseButtonPressed.SelectNextNodeState();
         }
     }
 
@@ -176,9 +162,7 @@ public class NodeController : MonoBehaviour
 
     private Node AddNode(Vector3 location)
     {
-        GameObject intersection = Instantiate(intersectionPrefab, location, Quaternion.identity);
-        Node node = new global::Node(location, intersection);
-        node.location = location;
+        Node node = new Node(location, intersectionPrefab, originDestinationPrefab);
         nodes.Add(node);
         return node;
     }
