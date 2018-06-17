@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class CarController : MonoBehaviour
 {
@@ -13,6 +14,10 @@ public class CarController : MonoBehaviour
     private bool driving;
     private Route currentRoute;
     private int currentLeg;
+    private Text destinationLabel;
+
+    private static float LABEL_OFFSET_X = 80;
+    private static float LABEL_OFFSET_Y = 25;
 
     public void SetOrigin(Node origin)
     {
@@ -28,6 +33,11 @@ public class CarController : MonoBehaviour
     {
         currentRoute = route;
         currentLeg = 1;
+
+        // Set the destination label to be the destination number of the last node in the path
+        destinationLabel = GetComponentInChildren<Text>();
+        destinationLabel.text = route.path[route.path.Count - 1].originDestinationNumber.ToString();
+
         SetOrigin(route.path[0]);
         SetDestination(route.path[currentLeg]);
     }
@@ -64,6 +74,9 @@ public class CarController : MonoBehaviour
         if (driving)
         {
             transform.position += transform.forward * Time.deltaTime * speed;
+            destinationLabel.transform.position =
+                Camera.main.WorldToScreenPoint(transform.position) + new Vector3(LABEL_OFFSET_X, LABEL_OFFSET_Y);
+
             if (ArrivedAtDestination())
             {
                 SetNewDestination();

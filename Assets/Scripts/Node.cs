@@ -4,20 +4,19 @@ using UnityEngine.UI;
 
 public class Node
 {
-    private static int currentLabelNumber = 0;
+    private static int currentOriginDestinationNumber = 1;
 
     public Vector3 location;
     public List<Node> neighbors = new List<Node>();
     public GameObject nodeGameObject;
     public bool isOriginDestination;
-    public int OriginDestinationNumber;
+    public int originDestinationNumber;
     public GameObject intersectionPrefab;
     public GameObject originDestinationPrefab;
     public NodeState nodeState;
 
     private const float LABEL_OFFSET_X = 80f;
     private const float LABEL_OFFSET_Y = 25f;
-    private int labelNumber;
 
     public enum NodeState
     {
@@ -71,8 +70,9 @@ public class Node
             prefabToInstantiate = originDestinationPrefab;
             nodeGameObject = GameObject.Instantiate(originDestinationPrefab, location, Quaternion.identity);
             Text label = nodeGameObject.GetComponentInChildren<Text>();
-            labelNumber = currentLabelNumber++;
-            label.text = currentLabelNumber.ToString();
+            originDestinationNumber = currentOriginDestinationNumber;
+            currentOriginDestinationNumber++;
+            label.text = originDestinationNumber.ToString();
             label.transform.position =
                 Camera.main.WorldToScreenPoint(location) + new Vector3(LABEL_OFFSET_X, LABEL_OFFSET_Y);
         }
