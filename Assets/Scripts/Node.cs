@@ -1,8 +1,11 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Node
 {
+    private static int currentLabelNumber = 0;
+
     public Vector3 location;
     public List<Node> neighbors = new List<Node>();
     public GameObject nodeGameObject;
@@ -11,6 +14,10 @@ public class Node
     public GameObject intersectionPrefab;
     public GameObject originDestinationPrefab;
     public NodeState nodeState;
+
+    private const float LABEL_OFFSET_X = 80f;
+    private const float LABEL_OFFSET_Y = 25f;
+    private int labelNumber;
 
     public enum NodeState
     {
@@ -58,17 +65,25 @@ public class Node
         nodeState = GetNextNodeState();
 
         GameObject prefabToInstantiate;
+        GameObject.Destroy(nodeGameObject);
         if (nodeState == NodeState.OriginDestination)
         {
             prefabToInstantiate = originDestinationPrefab;
+            nodeGameObject = GameObject.Instantiate(originDestinationPrefab, location, Quaternion.identity);
+            Text label = nodeGameObject.GetComponentInChildren<Text>();
+            labelNumber = currentLabelNumber++;
+            label.text = currentLabelNumber.ToString();
+            label.transform.position =
+                Camera.main.WorldToScreenPoint(location) + new Vector3(LABEL_OFFSET_X, LABEL_OFFSET_Y);
         }
         else
         {
             prefabToInstantiate = intersectionPrefab;
+            nodeGameObject = GameObject.Instantiate(originDestinationPrefab, location, Quaternion.identity);
         }
 
-        GameObject.Destroy(nodeGameObject);
-        nodeGameObject = GameObject.Instantiate(originDestinationPrefab, location, Quaternion.identity);
+
+
     }
 
     public void AddNeighbor(Node neighbor)
