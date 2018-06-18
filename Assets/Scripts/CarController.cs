@@ -18,6 +18,7 @@ public class CarController : MonoBehaviour
 
     private static float LABEL_OFFSET_X = 80;
     private static float LABEL_OFFSET_Y = 25;
+    private static float CAR_OFFSET_FROM_CENTER_OF_ROAD = 0.055f;
 
     public void SetOrigin(Node origin)
     {
@@ -56,6 +57,7 @@ public class CarController : MonoBehaviour
         Quaternion rotation = Quaternion.identity;
         rotation.SetLookRotation(destination.location - origin.location);
         transform.rotation = rotation;
+        transform.position += transform.right * CAR_OFFSET_FROM_CENTER_OF_ROAD;
     }
 
     private void StartDriving()
