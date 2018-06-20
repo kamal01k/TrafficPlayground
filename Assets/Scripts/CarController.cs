@@ -5,7 +5,7 @@ using UnityEngine.UI;
 public class CarController : MonoBehaviour
 {
 
-    public float speed;
+    private float speed = 1;
 
     private NodeController nodeController;
     private Node origin;
@@ -127,23 +127,51 @@ public class CarController : MonoBehaviour
                     }
                     break;
                 case CarState.Stopped:
-                    turningPath = GetTurningPathCubic(
-                        currentRoute.path[currentLeg],
-                        currentRoute.path[currentLeg + 1]);
-                    turningPathIndex = 0;
+                    // If we're stopped at a dstination, just
+                    // disappear.
+                    if (currentRoute.path[currentLeg].nodeState == Node.NodeState.OriginDestination)
+                    {
+                        Destroy(gameObject);
+                        break;
+                    }
+ 
+
+
+                    //turningPath = GetTurningPathCubic(
+                    //    currentRoute.path[currentLeg],
+                    //    currentRoute.path[currentLeg + 1]);
+                    //turningPathIndex = 0;
+                    SetupTurn();
                     carState = CarState.Turning;
                     break;
                 case CarState.Turning:
-                    if (turningPathIndex == turningPath.Count)
+                    if (FinishedTurning())
                     {
+                        // Moving through the points of the turn won't
+                        // quite get us oriented propertly, so do that
+                        // here.
+                        AlignCarWithRoad();
                         carState = CarState.Cruising;
+                        Debug.Log("Car is done turning");
+                        currentLeg++;
+                        
                     }
                     else
                     {
-                        MoveCarThroughTurn();
+                        MoveCarThroughTurn2();
                     }
                     break;
+                    //if (turningPathIndex == turningPath.Count)
+                    //{
+                    //    carState = CarState.Cruising;
+                    //}
+                    //else
+                    //{
+                    //    MoveCarThroughTurn();
+                    //}
+                    //break;
                 case CarState.Cruising:
+                    speed = 1;
                     transform.position += transform.forward * Time.deltaTime * speed;
                     break;
                 default:
@@ -160,17 +188,82 @@ public class CarController : MonoBehaviour
         }
     }
 
-    private void MoveCarThroughTurn2()
+    private void AlignCarWithRoad()
     {
-        Vector3 targetDir = turningPath[turningPathIndex] - transform.position;
+        Vector3 targetDir = currentRoute.path[currentLeg + 1].location - currentRoute.path[currentLeg].location;
         transform.rotation = Quaternion.LookRotation(Vector3.RotateTowards(transform.forward, targetDir, 1, 1));
-        transform.position = Vector3.MoveTowards(transform.position, turningPath[turningPathIndex], Time.deltaTime * 0.1f);
-        if (transform.position == turningPath[turningPathIndex])
-        {
-            turningPathIndex++;
-        }
     }
 
+    // We'll use these to draw a cubic bezier, with "pX" values typical
+    // of what you'd see in a diagram of such
+    // (https://en.wikipedia.org/wiki/B%C3%A9zier_curve#/media/File:Bezier_curve.svg)
+    private Vector3 turnStartPosition; // p0
+    private Vector3 turnStartHandle;   // p1
+    private Vector3 turnEndHandle;     // p2
+    private Vector3 turnEndPosition;   // p3
+    private const float TIME_TO_COMPLETE_TURN = 1f;
+    private const float BEZIER_HANDLE_SCALING = 0.15f;
+    private float turnStartTime;
+    private Vector3 lastPositionInTurn;
+
+    private bool FinishedTurning()
+    {
+        return Time.time >= turnStartTime + TIME_TO_COMPLETE_TURN;
+    }
+
+
+
+    // Get everything set so we can call the function to get the location
+    // of the car at any time.  We need to get the "points" for our bezier
+    // curve.
+    private void SetupTurn()
+    {
+        turnStartPosition = transform.position;
+        turnStartHandle = transform.position + (transform.forward * BEZIER_HANDLE_SCALING);
+        GetEndPositionAndDirectionForTurn(
+            currentRoute.path[currentLeg],
+            currentRoute.path[currentLeg + 1],
+            out turnEndPosition,
+            out turnEndHandle);
+
+        turnStartTime = Time.time;
+        lastPositionInTurn = transform.position;
+    }
+
+    Vector3 upOffset = new Vector3(0, 0.2f);
+
+    // Call a function each frame to find out where the car should be in the turn
+    private void MoveCarThroughTurn2()
+    {
+        float t = (Time.time - turnStartTime) / TIME_TO_COMPLETE_TURN;
+
+        // At the end of the turn, speed should = 1.0
+        // We'll assume linear acceleration throughout the turn
+        // This won't really be correct, since the change in position
+        // through a turn is not linearly related to t, but it'll
+        // have to do for now.
+        //speed = 1.0f / t;
+
+
+        //t *= speed;
+        //speed += 0.05f;
+
+        transform.position = CalcuateCubicBezierPoint(
+            t,
+            turnStartPosition,
+            turnStartHandle,
+            turnEndPosition,
+            turnEndHandle
+        );
+
+        Vector3 targetDir = transform.position - lastPositionInTurn;
+        transform.rotation = Quaternion.LookRotation(Vector3.RotateTowards(transform.forward, targetDir, 1, 1));
+
+        Debug.DrawLine(transform.position + upOffset, lastPositionInTurn + upOffset, Color.white, 10f);
+        lastPositionInTurn = transform.position;
+    }
+
+    // Get a list of points and turn through them
     private void MoveCarThroughTurn()
     {
         Vector3 targetDir = turningPath[turningPathIndex] - transform.position;
