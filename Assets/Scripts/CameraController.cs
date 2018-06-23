@@ -3,8 +3,8 @@
 public class CameraController : MonoBehaviour
 {
 
-    private const float CAMERA_PAN_SPEED = 0.1f;
-    private const float ZOOM_MAGNITUDE_OFFSET = 1;
+    private const float CAMERA_PAN_SPEED = 0.01f;
+    private const float ZOOM_MAGNITUDE_OFFSET = 10;
 
     void Update()
     {

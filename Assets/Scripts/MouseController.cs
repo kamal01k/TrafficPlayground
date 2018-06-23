@@ -32,6 +32,7 @@ public class MouseController : MonoBehaviour
             // Move the cursor to the new node we're pointing at
             if (gridSnapPosition != lastGridPosition)
             {
+                //Debug.Log("Now hovering over " + gridSnapPosition);
                 nodeController.HoveringOnNewGridPoint(gridSnapPosition);
                 lastGridPosition = gridSnapPosition;
             }

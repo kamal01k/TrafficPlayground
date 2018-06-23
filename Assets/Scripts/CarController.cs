@@ -5,7 +5,8 @@ using UnityEngine.UI;
 public class CarController : MonoBehaviour
 {
 
-    private float speed = 1;
+    private float speed = 10;
+    private float acceleration = 2.5f;
 
     private NodeController nodeController;
     private Node origin;
@@ -20,11 +21,12 @@ public class CarController : MonoBehaviour
 
     private static float LABEL_OFFSET_X = 80;
     private static float LABEL_OFFSET_Y = 25;
-    private static float CAR_OFFSET_FROM_CENTER_OF_ROAD = 0.055f;
-    private static float CAR_STOP_DISTANCE = 0.2f;
+    private static float CAR_OFFSET_FROM_CENTER_OF_ROAD = 0.55f;
+    private static float CAR_STOP_DISTANCE = 2.0f;
 
     private List<Vector3> turningPath;
     private int turningPathIndex;
+    private float velocity;
 
     public enum CarState
     {
@@ -145,7 +147,7 @@ public class CarController : MonoBehaviour
                     carState = CarState.Turning;
                     break;
                 case CarState.Turning:
-                    if (FinishedTurning())
+                    if (pastEndOfTurn)
                     {
                         // Moving through the points of the turn won't
                         // quite get us oriented propertly, so do that
@@ -158,7 +160,8 @@ public class CarController : MonoBehaviour
                     }
                     else
                     {
-                        MoveCarThroughTurn2();
+                        MoveCarThroughTurnUsingDistanceFunction();
+                        //MoveCarThroughTurn2();
                     }
                     break;
                     //if (turningPathIndex == turningPath.Count)
@@ -171,7 +174,10 @@ public class CarController : MonoBehaviour
                     //}
                     //break;
                 case CarState.Cruising:
-                    speed = 1;
+                    if (speed < 10)
+                    {
+                        speed += Time.deltaTime * acceleration;
+                    }
                     transform.position += transform.forward * Time.deltaTime * speed;
                     break;
                 default:
@@ -202,22 +208,47 @@ public class CarController : MonoBehaviour
     private Vector3 turnEndHandle;     // p2
     private Vector3 turnEndPosition;   // p3
     private const float TIME_TO_COMPLETE_TURN = 1f;
-    private const float BEZIER_HANDLE_SCALING = 0.15f;
+    private const float BEZIER_HANDLE_SCALING = 1.5f;
     private float turnStartTime;
     private Vector3 lastPositionInTurn;
+    private float currentTurnDistance;
+    private bool pastEndOfTurn;
 
     private bool FinishedTurning()
     {
         return Time.time >= turnStartTime + TIME_TO_COMPLETE_TURN;
     }
 
+    private Corner corner;
+    private float currentCornerDistance;
 
+    private void TestCorner()
+    {
+        Vector3[] testPoints = new Vector3[10];
+
+        for (int i = 0; i < testPoints.Length; i++)
+        {
+            testPoints[i] = new Vector3(i, 0, 0);
+        }
+        Corner testCorner = new Corner(testPoints);
+
+        bool pastEnd = false;
+
+        Vector3 returnedPoint = testCorner.GetPositionAtDistance(3.5f, out pastEnd);
+        returnedPoint = testCorner.GetPositionAtDistance(3.4f, out pastEnd);
+        returnedPoint = testCorner.GetPositionAtDistance(3.6f, out pastEnd);
+    }
 
     // Get everything set so we can call the function to get the location
     // of the car at any time.  We need to get the "points" for our bezier
     // curve.
     private void SetupTurn()
     {
+        TestCorner();
+        pastEndOfTurn = false;
+        currentCornerDistance = 0;
+        speed = 0;
+
         turnStartPosition = transform.position;
         turnStartHandle = transform.position + (transform.forward * BEZIER_HANDLE_SCALING);
         GetEndPositionAndDirectionForTurn(
@@ -226,11 +257,48 @@ public class CarController : MonoBehaviour
             out turnEndPosition,
             out turnEndHandle);
 
+        Debug.Log("Start of turn at " + turnStartPosition + "with handle at " + turnStartHandle);
+        Debug.Log("end of turn at " + turnEndPosition + " with handle at " + turnEndHandle);
+
+        corner = new global::Corner(turnStartPosition, turnStartHandle, turnEndPosition, turnEndHandle, 20);
+
+        bool pastEnd;
+        Vector3 testing = corner.GetPositionAtDistance(corner.totalDistance / 2, out pastEnd);
+
         turnStartTime = Time.time;
         lastPositionInTurn = transform.position;
     }
 
     Vector3 upOffset = new Vector3(0, 0.2f);
+
+    private void MoveCarThroughTurnUsingDistanceFunction()
+    {
+        speed += acceleration * Time.deltaTime;
+        currentCornerDistance += Time.deltaTime * speed;
+
+        // At the end of the turn, we want to be moving at 10 units/s
+        // If we're going to take 2 seconds to turn the corner, this means that we must
+        // accelerate at 5 m/s/s
+
+        Vector3 newPosition = corner.GetPositionAtDistance(currentCornerDistance, out pastEndOfTurn);
+        Debug.Log("Got turn position " + newPosition + " for distance " + currentCornerDistance);
+        
+        //if (pastEnd)
+        //{
+        //    return;
+        //}
+        if (!pastEndOfTurn)
+        {
+            Vector3 targetDir = newPosition - transform.position;
+            transform.rotation = Quaternion.LookRotation(Vector3.RotateTowards(transform.forward, targetDir, 1, 1));
+            transform.position = newPosition;
+        }
+        else
+        {
+            AlignCarWithRoad();
+        }
+
+    }
 
     // Call a function each frame to find out where the car should be in the turn
     private void MoveCarThroughTurn2()
@@ -261,6 +329,18 @@ public class CarController : MonoBehaviour
 
         Debug.DrawLine(transform.position + upOffset, lastPositionInTurn + upOffset, Color.white, 10f);
         lastPositionInTurn = transform.position;
+    }
+
+    private Vector3 CalcuateCubicBezierPoint(float t, Vector3 start, Vector3 startHandle, Vector3 end, Vector3 endHandle)
+    {
+        float u = 1 - t;
+        float uu = u * u;
+        float uuu = uu * u;
+
+        float tt = t * t;
+        float ttt = tt * t;
+
+        return uuu * start + 3 * uu * t * startHandle + 3 * u * tt * endHandle + ttt * end;
     }
 
     // Get a list of points and turn through them
@@ -349,18 +429,7 @@ public class CarController : MonoBehaviour
         return turningPath;
     }
 
-    //                                        start       startDir    end         endDir
-    Vector3 CalcuateCubicBezierPoint(float t, Vector3 start, Vector3 startDir, Vector3 end, Vector3 endDir)
-    {
-        float u = 1 - t;
-        float uu = u * u;
-        float uuu = uu * u;
 
-        float tt = t * t;
-        float ttt = tt * t;
-
-        return uuu * start + 3 * uu * t * startDir + 3 * u * tt * endDir + ttt * end;
-    }
 
     // Get the end-point and the "handle" (direction) for the end of a cubic bezier
     void GetEndPositionAndDirectionForTurn(Node intersection, Node destination, out Vector3 position, out Vector3 direction)
@@ -377,7 +446,7 @@ public class CarController : MonoBehaviour
             + new Vector3(offsetFromCenterOfDestinationRoad.x, 0, offsetFromCenterOfDestinationRoad.y)
             + fromIntersectionToDestination.normalized * CAR_STOP_DISTANCE;
 
-        direction = position - fromIntersectionToDestination.normalized * 0.15f;
+        direction = position - fromIntersectionToDestination.normalized * 1.5f;
     }
 
     List<Vector3> GetTurningPathCubic(Node intersection, Node destination)
