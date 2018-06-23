@@ -63,11 +63,9 @@ public class Node
     {
         nodeState = GetNextNodeState();
 
-        GameObject prefabToInstantiate;
         GameObject.Destroy(nodeGameObject);
         if (nodeState == NodeState.OriginDestination)
         {
-            prefabToInstantiate = originDestinationPrefab;
             nodeGameObject = GameObject.Instantiate(originDestinationPrefab, location, Quaternion.identity);
             Text label = nodeGameObject.GetComponentInChildren<Text>();
             originDestinationNumber = currentOriginDestinationNumber;
@@ -78,12 +76,8 @@ public class Node
         }
         else
         {
-            prefabToInstantiate = intersectionPrefab;
             nodeGameObject = GameObject.Instantiate(originDestinationPrefab, location, Quaternion.identity);
         }
-
-
-
     }
 
     public void AddNeighbor(Node neighbor)

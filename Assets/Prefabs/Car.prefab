@@ -22,7 +22,7 @@ GameObject:
   - component: {fileID: 223521950181619934}
   - component: {fileID: 114505743869277806}
   - component: {fileID: 114607468608843178}
-  m_Layer: 5
+  m_Layer: 9
   m_Name: Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -40,7 +40,9 @@ GameObject:
   - component: {fileID: 33013381917263708}
   - component: {fileID: 23038365473491564}
   - component: {fileID: 114350993998805054}
-  m_Layer: 0
+  - component: {fileID: 65611374571334576}
+  - component: {fileID: 54462999411358966}
+  m_Layer: 9
   m_Name: Car
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -57,7 +59,7 @@ GameObject:
   - component: {fileID: 224566530771027542}
   - component: {fileID: 222317436384920558}
   - component: {fileID: 114733329371372302}
-  m_Layer: 5
+  m_Layer: 9
   m_Name: Text
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -71,8 +73,8 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1874676886858944}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.125, z: 0}
-  m_LocalScale: {x: 0.06, y: 0.15, z: 0.14}
+  m_LocalPosition: {x: -0.008473025, y: 0.075, z: -0.0028325021}
+  m_LocalScale: {x: 0.6, y: 1.5, z: 1.4}
   m_Children:
   - {fileID: 224909118908162270}
   m_Father: {fileID: 0}
@@ -120,6 +122,33 @@ MeshFilter:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1874676886858944}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!54 &54462999411358966
+Rigidbody:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1874676886858944}
+  serializedVersion: 2
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_UseGravity: 0
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!65 &65611374571334576
+BoxCollider:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1874676886858944}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 1, y: 1, z: 1.0000001}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &114350993998805054
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -131,7 +160,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 18c43f3e47cdd554aaa223de59571e26, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 1
 --- !u!114 &114505743869277806
 MonoBehaviour:
   m_ObjectHideFlags: 1

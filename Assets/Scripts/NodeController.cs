@@ -100,11 +100,11 @@ public class NodeController : MonoBehaviour
         if (newRoad == null)
         {
             newRoad = Instantiate(roadPrefab, midpoint, rotation);
-            newRoad.transform.localScale = new Vector3(0.2f, 0.1f, roadLength);
+            newRoad.transform.localScale = new Vector3(2.0f, 1.0f, roadLength);
         }
         else
         {
-            newRoad.transform.localScale = new Vector3(0.2f, 0.1f, roadLength);
+            newRoad.transform.localScale = new Vector3(2.0f, 1.0f, roadLength);
             newRoad.transform.position = midpoint;
             newRoad.transform.rotation = rotation;
         }
@@ -113,6 +113,10 @@ public class NodeController : MonoBehaviour
     public void LeftMousePressAtGridPoint(Vector3 position)
     {
         nodeWhereLeftMouseButtonPressed = AddOrLocateNode(position, out nodeExistsWhereLeftMouseButtonPressed);
+        if (nodeExistsWhereLeftMouseButtonPressed)
+        {
+            drawingFromExistingNode = true;
+        }
         leftMouseButtonPressed = true;
         positionWhereLeftMouseButtonPressed = position;
     }
@@ -155,7 +159,7 @@ public class NodeController : MonoBehaviour
 
             if (!drawingFromExistingNode)
             {
-                RemoveNode(roadStart);
+                RemoveNode(nodeWhereLeftMouseButtonPressed);
             }
         }
     }
