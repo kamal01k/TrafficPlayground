@@ -1,17 +1,12 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 // Corners built from Bezier curves.
-public class Corner {
+public class Corner
+{
 
-    public Vector3[] points;
+    private Vector3[] points;
     private float[] distances;
     private int numPoints;
-    private Vector3 start;
-    private Vector3 startHandle;
-    private Vector3 end;
-    private Vector3 endHandle;
 
     public float totalDistance
     {
@@ -21,25 +16,8 @@ public class Corner {
         }
     }
 
-    public Corner (Vector3[] testPoints)
+    public Corner(Vector3 start, Vector3 startHandle, Vector3 end, Vector3 endHandle, int numPoints)
     {
-        points = testPoints;
-        numPoints = testPoints.Length;
-        distances = new float[numPoints];
-        distances[0] = 0;
-        Vector3 lastPoint = testPoints[0];
-        for (int i = 1; i < numPoints; i++)
-        {
-            distances[i] = distances[i - 1] + Vector3.Distance(points[i], points[i - 1]);
-        }
-    }
-
-    public Corner (Vector3 start, Vector3 startHandle, Vector3 end, Vector3 endHandle, int numPoints)
-    {
-        this.start = start;
-        this.startHandle = startHandle;
-        this.end = end;
-        this.endHandle = endHandle;
         this.numPoints = numPoints;
 
         points = new Vector3[numPoints];
@@ -53,8 +31,6 @@ public class Corner {
             float t = (float)i / (float)numPoints;
             points[i] = CalcuateCubicBezierPoint(t, start, startHandle, end, endHandle);
             distances[i] = distances[i - 1] + Vector3.Distance(points[i], points[i - 1]);
-            Debug.Log("distance " + i + ": " + distances[i]);
-            Debug.DrawLine(points[i - 1] + Vector3.up, points[i] + Vector3.up, Color.white, 10f);
         }
     }
 
@@ -70,10 +46,11 @@ public class Corner {
         return uuu * start + 3 * uu * t * startHandle + 3 * u * tt * endHandle + ttt * end;
     }
 
-    // Get a point along the curve at distance f
+    // Get a point along the curve at a given distance into the curve
     public Vector3 GetPositionAtDistance(float distance, out bool pastEnd)
     {
-        if (distance > distances[numPoints - 1]) {
+        if (distance > distances[numPoints - 1])
+        {
             pastEnd = true;
             return Vector3.negativeInfinity;
         }
@@ -83,7 +60,6 @@ public class Corner {
         // Find the float index of the closest distance.
         // We can use this to lerp between the values that we have in the table.
         float index = FindInterpolatedIndexOfClosestDistance(distance, 0, numPoints - 1);
-        Debug.Log("For distance " + distance + ", got index " + index);
 
         int integerPart = (int)index;
         float decimalPart = index - integerPart;
@@ -133,7 +109,6 @@ public class Corner {
             // Find the error from value below it.  We know that it will 
             // be too small.
             float lowerError = targetDistance - distances[midPoint - 1];
-            //float partialIndexValue;
 
             // Figure out where to choose between these values for an
             // interpolated match.
@@ -144,7 +119,6 @@ public class Corner {
         if (currentError < 0)
         {
             float higherError = targetDistance - distances[midPoint + 1];
-            float partialIndexValue;
 
             return (float)midPoint + currentError / (currentError + higherError);
         }

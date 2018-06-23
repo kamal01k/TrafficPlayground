@@ -113,6 +113,10 @@ public class NodeController : MonoBehaviour
     public void LeftMousePressAtGridPoint(Vector3 position)
     {
         nodeWhereLeftMouseButtonPressed = AddOrLocateNode(position, out nodeExistsWhereLeftMouseButtonPressed);
+        if (nodeExistsWhereLeftMouseButtonPressed)
+        {
+            drawingFromExistingNode = true;
+        }
         leftMouseButtonPressed = true;
         positionWhereLeftMouseButtonPressed = position;
     }
@@ -155,7 +159,7 @@ public class NodeController : MonoBehaviour
 
             if (!drawingFromExistingNode)
             {
-                RemoveNode(roadStart);
+                RemoveNode(nodeWhereLeftMouseButtonPressed);
             }
         }
     }
