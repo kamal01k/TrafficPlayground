@@ -52,6 +52,26 @@ public class NodeController : MonoBehaviour
             int indexOfRouteToUse = Random.Range(0, routes.Count);
             carController.SetRoute(routes[indexOfRouteToUse]);
         }
+
+        UpdateLabelPositions();
+    }
+
+    private void UpdateLabelPositions()
+    {
+        var originDestinationNodes = from node in nodes
+                                     where node.nodeState == Node.NodeState.OriginDestination
+                                     select node;
+
+        int originDestinationCount = originDestinationNodes.Count<Node>();
+        if (originDestinationCount == 0)
+        {
+            return;
+        }
+
+        foreach (Node node in originDestinationNodes)
+        {
+            node.UpdateLabelPosition();
+        }
     }
 
     private void PrintRoutes(List<Route> routes)

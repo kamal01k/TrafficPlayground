@@ -17,6 +17,7 @@ public class Node
 
     private const float LABEL_OFFSET_X = 80f;
     private const float LABEL_OFFSET_Y = 25f;
+    private Text label;
 
     public enum NodeState
     {
@@ -67,7 +68,7 @@ public class Node
         if (nodeState == NodeState.OriginDestination)
         {
             nodeGameObject = GameObject.Instantiate(originDestinationPrefab, location, Quaternion.identity);
-            Text label = nodeGameObject.GetComponentInChildren<Text>();
+            label = nodeGameObject.GetComponentInChildren<Text>();
             originDestinationNumber = currentOriginDestinationNumber;
             currentOriginDestinationNumber++;
             label.text = originDestinationNumber.ToString();
@@ -90,5 +91,11 @@ public class Node
     {
         neighbors.Remove(neighbor);
         Debug.Log("Removing neighbor at " + neighbor.location + " from " + location);
+    }
+
+    public void UpdateLabelPosition()
+    {
+        label.transform.position =
+                Camera.main.WorldToScreenPoint(location) + new Vector3(LABEL_OFFSET_X, LABEL_OFFSET_Y);
     }
 }
