@@ -7,6 +7,7 @@ public class CarController : MonoBehaviour
 
     private float speed = 10;
     private float acceleration = 2.5f;
+    private Vector3 velocity;
 
     private NodeController nodeController;
     private Node origin;
@@ -19,10 +20,16 @@ public class CarController : MonoBehaviour
     private CarState carState;
     private float brakingAcceleration = 0;
 
-    private static float LABEL_OFFSET_X = 80;
-    private static float LABEL_OFFSET_Y = 25;
-    private static float CAR_OFFSET_FROM_CENTER_OF_ROAD = 0.55f;
-    private static float CAR_STOP_DISTANCE = 2.0f;
+    private const float LABEL_OFFSET_X = 80;
+    private const float LABEL_OFFSET_Y = 25;
+    private const float CAR_OFFSET_FROM_CENTER_OF_ROAD = 0.55f;
+    private const float CAR_STOP_FORWARD_OFFSET = 2.0f;
+    private const float BEZIER_HANDLE_SCALING = 1.5f;
+    private const float STOPPING_TIME = 1.0f;
+    private const float STOPPED_SPEED_THRESHOLD = 0.1f;
+    private bool pastEndOfTurn;
+    private Corner corner;
+    private float currentCornerDistance;
 
     public enum CarState
     {
@@ -30,8 +37,7 @@ public class CarController : MonoBehaviour
         Cruising,
         Braking,
         Stopped,
-        Turning,
-        Accelerating
+        Turning
     }
 
     public void SetOrigin(Node origin)
@@ -63,7 +69,6 @@ public class CarController : MonoBehaviour
         nodeController = FindObjectOfType<NodeController>();
         carState = CarState.Spawned;
         MoveToOriginAndPointAtDestination();
-        StartDriving();
     }
 
     private void MoveToOriginAndPointAtDestination()
@@ -75,6 +80,8 @@ public class CarController : MonoBehaviour
         transform.position += transform.right * CAR_OFFSET_FROM_CENTER_OF_ROAD;
     }
 
+    Vector3 stoppingPoint;
+
     public void OnTriggerEnter(Collider other)
     {
         switch (carState)
@@ -84,7 +91,10 @@ public class CarController : MonoBehaviour
                 break;
             case CarState.Cruising:
                 carState = CarState.Braking;
+                stoppingPoint = GetStoppingPoint(origin, destination);
+                velocity = transform.forward * speed;
                 break;
+
             default:
                 Debug.Log("Car was in state " + carState + ", which OnTriggerEnter() didn't handle");
                 break;
@@ -92,86 +102,84 @@ public class CarController : MonoBehaviour
         Debug.Log("I ran into " + other.name + " located at " + other.transform.root.position);
     }
 
-    private void StartDriving()
-    {
-        driving = true;
-    }
-
-    private void StopDriving()
-    {
-        driving = false;
-    }
-
     // Update is called once per frame
     void Update()
     {
-        if (driving)
+        switch (carState)
         {
-            switch (carState)
-            {
-                case CarState.Braking:
-                    if (speed > 0)
+            case CarState.Braking:
+                if (speed > STOPPED_SPEED_THRESHOLD)
+                {
+                    transform.position = Vector3.SmoothDamp(transform.position, stoppingPoint, ref velocity, STOPPING_TIME);
+                    speed = velocity.magnitude;
+                    if (speed < STOPPED_SPEED_THRESHOLD)
                     {
-                        // We want to be completely stopped when
-                        // the car is CAR_STOP_DISTANCE from its current
-                        // destination.
-                        speed -= GetBrakingStrength() * Time.deltaTime;
-                        transform.position += transform.forward * Time.deltaTime * speed;
-                    }
-                    else
-                    {
+                        speed = 0;
                         carState = CarState.Stopped;
-                        Debug.Log("Car is stopped.");
                     }
+                }
+                else
+                {
+                    carState = CarState.Stopped;
+                    Debug.Log("Car is stopped.");
+                }
+                break;
+            case CarState.Stopped:
+                // If we're stopped at a destination, just
+                // disappear.
+                if (currentRoute.path[currentLeg].nodeState == Node.NodeState.OriginDestination)
+                {
+                    Destroy(gameObject);
                     break;
-                case CarState.Stopped:
-                    // If we're stopped at a dstination, just
-                    // disappear.
-                    if (currentRoute.path[currentLeg].nodeState == Node.NodeState.OriginDestination)
-                    {
-                        Destroy(gameObject);
-                        break;
-                    }
+                }
 
-                    SetupTurn();
-                    carState = CarState.Turning;
-                    break;
-                case CarState.Turning:
-                    if (pastEndOfTurn)
-                    {
-                        // Moving through the points of the turn won't
-                        // quite get us oriented propertly, so do that
-                        // here.
-                        AlignCarWithRoad();
-                        carState = CarState.Cruising;
-                        Debug.Log("Car is done turning");
-                        currentLeg++;
-
-                    }
-                    else
-                    {
-                        MoveCarThroughTurnUsingDistanceFunction();
-                    }
-                    break;
-                case CarState.Cruising:
-                    if (speed < 10)
-                    {
-                        speed += Time.deltaTime * acceleration;
-                    }
-                    transform.position += transform.forward * Time.deltaTime * speed;
-                    break;
-                default:
-                    break;
-            }
-
-            destinationLabel.transform.position =
-                Camera.main.WorldToScreenPoint(transform.position) + new Vector3(LABEL_OFFSET_X, LABEL_OFFSET_Y);
-
-            if (ArrivedAtDestination())
-            {
-                SetNewDestination();
-            }
+                SetupTurn();
+                carState = CarState.Turning;
+                break;
+            case CarState.Turning:
+                if (pastEndOfTurn)
+                {
+                    // Moving through the points of the turn won't
+                    // quite get us oriented propertly, so do that
+                    // here.
+                    AlignCarWithRoad();
+                    carState = CarState.Cruising;
+                    SetNewDestination();
+                }
+                else
+                {
+                    MoveCarThroughTurnUsingDistanceFunction();
+                }
+                break;
+            case CarState.Cruising:
+                if (speed < 10)
+                {
+                    speed += Time.deltaTime * acceleration;
+                }
+                transform.position += transform.forward * Time.deltaTime * speed;
+                break;
+            default:
+                break;
         }
+
+        destinationLabel.transform.position =
+            Camera.main.WorldToScreenPoint(transform.position) + new Vector3(LABEL_OFFSET_X, LABEL_OFFSET_Y);
+    }
+
+    private Vector3 GetStoppingPoint(Node startIntersection, Node endEntersection)
+    {
+        // Get the direction of the road
+        Vector3 alongRoadComponent = (endEntersection.location - startIntersection.location);
+
+        // Scale it to the distance (along the road) that we want to stop from
+        // the center of the intersection
+        alongRoadComponent = alongRoadComponent.normalized * CAR_STOP_FORWARD_OFFSET;
+
+        // Get the direction for the offset from the center of the road
+        Vector3 offsetFromCenterComponent = Vector3.Cross(alongRoadComponent, Vector3.up).normalized
+            * CAR_OFFSET_FROM_CENTER_OF_ROAD;
+
+        return endEntersection.location - alongRoadComponent - offsetFromCenterComponent;
     }
 
     private void AlignCarWithRoad()
@@ -180,25 +188,18 @@ public class CarController : MonoBehaviour
         transform.rotation = Quaternion.LookRotation(Vector3.RotateTowards(transform.forward, targetDir, 1, 1));
     }
 
-    // We'll use these to draw a cubic bezier, with "pX" values typical
-    // of what you'd see in a diagram of such
-    // (https://en.wikipedia.org/wiki/B%C3%A9zier_curve#/media/File:Bezier_curve.svg)
-    private Vector3 turnStartPosition; // p0
-    private Vector3 turnStartHandle;   // p1
-    private Vector3 turnEndHandle;     // p2
-    private Vector3 turnEndPosition;   // p3
-    private const float TIME_TO_COMPLETE_TURN = 1f;
-    private const float BEZIER_HANDLE_SCALING = 1.5f;
-    private bool pastEndOfTurn;
-
-    private Corner corner;
-    private float currentCornerDistance;
-
     // Get everything set so we can call the function to get the location
     // of the car at any time.  We need to get the "points" for our bezier
     // curve.
     private void SetupTurn()
     {
+        // We'll use these to draw a cubic bezier, with "pX" values typical
+        // of what you'd see in a diagram of such
+        // (https://en.wikipedia.org/wiki/B%C3%A9zier_curve#/media/File:Bezier_curve.svg)
+        Vector3 turnStartPosition; // p0
+        Vector3 turnStartHandle;   // p1
+        Vector3 turnEndHandle;     // p2
+        Vector3 turnEndPosition;   // p3
         pastEndOfTurn = false;
         currentCornerDistance = 0;
         speed = 0;
@@ -238,23 +239,12 @@ public class CarController : MonoBehaviour
         }
 
         float distanceFromDestination = Vector3.Distance(transform.position, destination.location)
-            - CAR_STOP_DISTANCE;
+            - CAR_STOP_FORWARD_OFFSET;
         Debug.Log("Distance to stop in: " + distanceFromDestination);
         float newBrakingAcceleration = (speed * speed) / (2 * distanceFromDestination);
         brakingAcceleration = newBrakingAcceleration;
         Debug.Log("Braking acceleration: " + brakingAcceleration);
         return newBrakingAcceleration;
-    }
-
-    private bool ArrivedAtDestination()
-    {
-        // TODO: Come up with a less hacky / more reliable way to do this
-        if (Vector3.Distance(transform.position, destination.location) <= speed * Time.deltaTime * 4)
-        {
-            return true;
-        }
-
-        return false;
     }
 
     // Get the end-point and the "handle" (direction) for the end of a cubic bezier
@@ -268,7 +258,7 @@ public class CarController : MonoBehaviour
 
         position = intersection.location
             + new Vector3(offsetFromCenterOfDestinationRoad.x, 0, offsetFromCenterOfDestinationRoad.y)
-            + fromIntersectionToDestination.normalized * CAR_STOP_DISTANCE;
+            + fromIntersectionToDestination.normalized * CAR_STOP_FORWARD_OFFSET;
 
         direction = position - fromIntersectionToDestination.normalized * 1.5f;
     }
@@ -292,7 +282,5 @@ public class CarController : MonoBehaviour
             currentLeg++;
             destination = currentRoute.path[currentLeg];
         }
-
-        MoveToOriginAndPointAtDestination();
     }
 }
