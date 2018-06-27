@@ -16,6 +16,8 @@ public class Corner
         }
     }
 
+    // To come up with a corner, we need the four points that define the cubic bezier
+    // and a count of how many points we should store.
     public Corner(Vector3 start, Vector3 startHandle, Vector3 end, Vector3 endHandle, int numPoints)
     {
         this.numPoints = numPoints;
@@ -81,6 +83,7 @@ public class Corner
         int right = endIndex;
         float currentDistance = 0;
 
+        // First a regular binary search,
         while (left < right)
         {
             midPoint = (left + right) / 2;
@@ -100,14 +103,13 @@ public class Corner
             }
         }
 
+        // Then a check of where we should be assuming a linear scale
+        // between the closest points we have.
         float currentError = currentDistance - targetDistance;
 
-        // If the value we found is too big, find the value below it
-        // and see which is closer
+        // If the value we found is too big
         if (currentError > 0)
         {
-            // Find the error from value below it.  We know that it will 
-            // be too small.
             float lowerError = targetDistance - distances[midPoint - 1];
 
             // Figure out where to choose between these values for an

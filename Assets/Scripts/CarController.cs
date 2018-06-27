@@ -4,7 +4,6 @@ using UnityEngine.UI;
 
 public class CarController : MonoBehaviour
 {
-
     private float speed = 10;
     private float acceleration = 2.5f;
     private Vector3 velocity;
@@ -82,6 +81,9 @@ public class CarController : MonoBehaviour
 
     Vector3 stoppingPoint;
 
+    // We've run into something.  Right now, this is just
+    // a collider around an intersection or origin/destination,
+    // to tell the car that it should stop or disappear.
     public void OnTriggerEnter(Collider other)
     {
         switch (carState)
@@ -112,22 +114,23 @@ public class CarController : MonoBehaviour
                 {
                     transform.position = Vector3.SmoothDamp(transform.position, stoppingPoint, ref velocity, STOPPING_TIME);
                     speed = velocity.magnitude;
-                    if (speed < STOPPED_SPEED_THRESHOLD)
-                    {
-                        speed = 0;
-                        carState = CarState.Stopped;
-                    }
+                    //if (speed < STOPPED_SPEED_THRESHOLD)
+                    //{
+                    //    speed = 0;
+                    //    carState = CarState.Stopped;
+                    //}
                 }
                 else
                 {
+                    speed = 0;
                     carState = CarState.Stopped;
                     Debug.Log("Car is stopped.");
                 }
                 break;
             case CarState.Stopped:
-                // If we're stopped at a destination, just
+                // If we're stopped at the final destination, just
                 // disappear.
-                if (currentRoute.path[currentLeg].nodeState == Node.NodeState.OriginDestination)
+                if (currentRoute.path[currentLeg] == currentRoute.path[currentRoute.path.Count - 1])
                 {
                     Destroy(gameObject);
                     break;
@@ -144,7 +147,7 @@ public class CarController : MonoBehaviour
                     // here.
                     AlignCarWithRoad();
                     carState = CarState.Cruising;
-                    SetNewDestination();
+                    SetNewOriginAndDestination();
                 }
                 else
                 {
@@ -263,7 +266,8 @@ public class CarController : MonoBehaviour
         direction = position - fromIntersectionToDestination.normalized * 1.5f;
     }
 
-    private void SetNewDestination()
+
+    private void SetNewOriginAndDestination()
     {
         // If we're at the end of our route, find a random route to another
         // destination

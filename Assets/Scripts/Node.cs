@@ -77,7 +77,7 @@ public class Node
         }
         else
         {
-            nodeGameObject = GameObject.Instantiate(originDestinationPrefab, location, Quaternion.identity);
+            nodeGameObject = GameObject.Instantiate(intersectionPrefab, location, Quaternion.identity);
         }
     }
 
